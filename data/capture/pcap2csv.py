@@ -34,24 +34,26 @@ from scapy.layers.inet import IP, TCP, UDP
 #MAIN
 with open(dstfile, 'w') as dst:
 	dst.write('time,proto,data_len,ip_src,ip_dst,src_port,dst_port\n')
-
+	count=1
 	#READ THE PCAP FILE
 	for (pkt_data, pkt_metadata,) in RawPcapReader(srcfile):
-		print(pkt_data)
+		# print(pkt_data)
+		count=count+1
+		if count==1000:break
 		ether_pkt = Ether(pkt_data)
-		print(ether_pkt)
+		# print(ether_pkt)
 
 		#FILTER NON RELEVANT PACKETS
 		if 'type' not in ether_pkt.fields: continue		# LLC frames will have 'len' instead of 'type'.
 		if ether_pkt.type != 0x0800: continue			# disregard non-IPv4 packets
 
 		ip_pkt = ether_pkt[IP]
-		print(ip_pkt.proto)
+		# print(ip_pkt.proto)
 		if ip_pkt.proto == 6 or ip_pkt.proto == 17:		# if UDP or TCP
 			try:
 				pkt = ip_pkt[TCP if ip_pkt.proto == 6 else UDP]
 				data_len = (len(pkt) - (pkt.dataofs * 4)) if (ip_pkt.proto == 6) else len(pkt)
-				print(data_len)
+				# print(data_len)
 				sport, dport = ip_pkt.payload.sport, ip_pkt.payload.dport
 			except Exception as e:
 				print(e)
@@ -62,12 +64,13 @@ with open(dstfile, 'w') as dst:
 			#sport, dport = '', ''
 
 		if skip_empty and data_len == 0: continue		# Skip packets with an empty payload
-		print(pkt_metadata)
+		# print(pkt_metadata)
 		#GET THE CSV LINE FOR THE ACTUAL PACKET
 		tshigh = pkt_metadata.tshigh		
 		tslow = pkt_metadata.tslow
-		pkt_timestamp = (tshigh << 32) + tslow
-#   pkt_timestamp = (pkt_metadata.sec) + (pkt_metadata.usec / 1000000)
+		pkt_timestamp = ((tshigh << 32) + tslow)/pkt_metadata.tsresol
+		print(pkt_timestamp)
+		# pkt_timestamp = (pkt_metadata.sec) + (pkt_metadata.usec / 1000000)
 		pkt_line = '{},{},{},{},{},{},{}'.format(
 		    pkt_timestamp, ip_pkt.proto, data_len,
 		    ip_pkt.src, ip_pkt.dst,

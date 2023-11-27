@@ -13,4 +13,14 @@ https://ieeexplore.ieee.org/abstract/document/9678955?casa_token=WzbhYjmU_KMAAAA
 
 
 
+时差
+
+实际时间 11 pcap  8  csv
+
+9.47            20.47     12.47
+
+
 使用qleaning调整阈值，近似数计算 1/8
+
+
+![1701095942271](image/README/1701095942271.png)
