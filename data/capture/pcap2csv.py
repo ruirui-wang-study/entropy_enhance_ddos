@@ -48,10 +48,14 @@ with open(dstfile, 'w') as dst:
 		ip_pkt = ether_pkt[IP]
 		print(ip_pkt.proto)
 		if ip_pkt.proto == 6 or ip_pkt.proto == 17:		# if UDP or TCP
-			pkt = ip_pkt[TCP if ip_pkt.proto == 6 else UDP]
-			data_len = (len(pkt) - (pkt.dataofs * 4)) if (ip_pkt.proto == 6) else len(pkt)
-			print(data_len)
-			sport, dport = ip_pkt.payload.sport, ip_pkt.payload.dport
+			try:
+				pkt = ip_pkt[TCP if ip_pkt.proto == 6 else UDP]
+				data_len = (len(pkt) - (pkt.dataofs * 4)) if (ip_pkt.proto == 6) else len(pkt)
+				print(data_len)
+				sport, dport = ip_pkt.payload.sport, ip_pkt.payload.dport
+			except Exception as e:
+				print(e)
+				continue
 		else :							# if other IP packet
 			continue 					# filter non TCP-UDP packets
 			#data_len = len(ip_pkt)
