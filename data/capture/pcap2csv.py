@@ -31,15 +31,37 @@ from scapy.utils import RawPcapReader
 from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP, TCP, UDP
 
+# 明日计划：按照时间序列提取数据流
+# pcap中的时间戳是捕获工具拿到数据包的时间，一分钟内会捕获到很多流的数据包，流根据五元组（源ip，目标ip，源端口号，目标端口号，协议）标识，设置一个时间窗口，
+# 提取这个窗口内捕获到的数据包，特征是五元组，包长度，再根据五元组与时间戳和csv中的数据进行比对，确定攻击类型
+
+
 #MAIN
 with open(dstfile, 'w') as dst:
-	dst.write('time,proto,data_len,ip_src,ip_dst,src_port,dst_port\n')
-	count=1
+	dst.write('epoch,time,proto,data_len,ip_src,ip_dst,src_port,dst_port\n')
+	count=0
+	window_s=300.000000000
+	epoch=0
+	end=1
 	#READ THE PCAP FILE
 	for (pkt_data, pkt_metadata,) in RawPcapReader(srcfile):
 		# print(pkt_data)
-		count=count+1
-		if count==1000:break
+		tshigh = pkt_metadata.tshigh		
+		tslow = pkt_metadata.tslow
+		pkt_timestamp = ((tshigh << 32) + tslow)/pkt_metadata.tsresol
+		print(pkt_timestamp)
+		if end:
+			start=pkt_timestamp
+			epoch=epoch+1
+			end=0
+		else:
+			if pkt_timestamp-start>=window_s:
+				end=1
+      
+  
+		# count=count+1
+
+		# if count==1000:break
 		ether_pkt = Ether(pkt_data)
 		# print(ether_pkt)
 
@@ -65,14 +87,11 @@ with open(dstfile, 'w') as dst:
 
 		if skip_empty and data_len == 0: continue		# Skip packets with an empty payload
 		# print(pkt_metadata)
-		#GET THE CSV LINE FOR THE ACTUAL PACKET
-		tshigh = pkt_metadata.tshigh		
-		tslow = pkt_metadata.tslow
-		pkt_timestamp = ((tshigh << 32) + tslow)/pkt_metadata.tsresol
-		print(pkt_timestamp)
+		
+		
 		# pkt_timestamp = (pkt_metadata.sec) + (pkt_metadata.usec / 1000000)
-		pkt_line = '{},{},{},{},{},{},{}'.format(
-		    pkt_timestamp, ip_pkt.proto, data_len,
+		pkt_line = '{},{},{},{},{},{},{},{}'.format(
+		    epoch,pkt_timestamp, ip_pkt.proto, data_len,
 		    ip_pkt.src, ip_pkt.dst,
 		    sport, dport
 		)
