@@ -23,6 +23,8 @@ class ddosDetection:
    ddosDetected = 0
    # if 10 times consecutively , entropy value is less than 1, then indicate to controller than DDOS Attack is detected
    counter = 0
+   
+   
    ipList_Dict = {}
    sumEntropy = 0
    ddos_dist=[]
@@ -33,22 +35,19 @@ class ddosDetection:
    detection_dist=[]
    start_time=""
    flag=0
-   def calculateEntropy(self,ip,time,label):
+   def calculateEntropy(self,ip,time,threshold):
       #calculate entropy when pkt cont reaches 100
       self.pktCnt +=1
       if ip in self.ipList_Dict:
          self.ipList_Dict[ip] += 1
       else:
          self.ipList_Dict[ip] = 0
-      if pd.notna(label) and label=='DoS Hulk':
-         self.ddos_dist[self.idx]=1
+
       if self.flag==0:
          self.start_time=time
          self.flag=1
-      # if self.pktCnt == 500:
-      if time!=self.start_time:
-         
-         
+      print(time)
+      if time!=self.start_time:       
          #print self.ipList_Dict.items()
          print( self.pktCnt)
          self.sumEntropy = 0
@@ -92,23 +91,31 @@ class ddosDetection:
          # Confusion Matrix:
          # [[458  32]
          # [  1  17]]
-         if 0 < normalized_entropy < 0.37:
+         if 0 < normalized_entropy < threshold:
             # self.counter += 1
             self.detection_dist.append(1)
          else :
             self.detection_dist.append(0)
          self.idx=self.idx+1
-         self.ddos_dist.append(0)
          # if self.counter == 10:
          #    self.ddosDetected = 1
          #    print( "Counter = ",self.counter)
          #    print( "DDOS ATTACK DETECTED")
          #    self.counter = 0 
          self.cleanUpValues()
-      # else:
          self.flag=0
       #    print("this epoch is done,please turn to next epoch")       
       
+   def get_ddos_list(self,time,label):
+      if pd.notna(label) and label=='DoS Hulk':
+         self.ddos_dist[self.idx]=1
+      if self.flag==0:
+         self.start_time=time
+         self.flag=1
+      if time!=self.start_time:
+         self.idx=self.idx+1
+         self.ddos_dist.append(0)
+         self.flag=0     
    def cleanUpValues(self):
       self.pktCnt = 0
       self.dest_ipList = []

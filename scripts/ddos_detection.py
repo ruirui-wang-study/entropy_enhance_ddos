@@ -5,8 +5,10 @@ import entropyCalculation
 import pandas as pd
 
 import csv
+
+import numpy as np
 obj = entropyCalculation.ddosDetection()
-csv_file_path = 'datasetWithLabel.csv'  
+csv_file_path = 'csv\epoch_26.csv'  
 
 from datetime import datetime, timedelta
 def cal_window(time):
@@ -67,27 +69,61 @@ with open(csv_file_path, 'r') as file:
         # 在这里进行你的处理，比如打印或其他操作
         # print(f'Epoch: {epoch}, IP_SRC: {ip_src}, Label:{label}')
         
-        obj.calculateEntropy(ip_src,time,label)
+        obj.get_ddos_list(time,label)
         #print "Entropy value = ",str(obj.sumEntropy)
+        # obj.calculateEntropy(ip_src,time,0.37)
+        # if (obj.ddosDetected == 1) :
+        #     print("Controller detected DDOS ATTACK, Entropy value :",str(obj.sumEntropy))
+        #     obj.ddosDetected = 0
+        #     print("Future work to implement prevention methods")
+        #     break
+obj.idx=0
+obj.flag=0
+obj.start_time=""
+    
+with open(csv_file_path, 'r') as file:
+    csv_reader = csv.reader(file)
+
+    # 获取列索引
+    header = next(csv_reader)
+    epoch_index = header.index('epoch')
+    time_index = header.index('time')
+    ip_src_index = header.index('ip_src')
+    label_index = header.index('label')
+    for row in csv_reader:
+        epoch = row[epoch_index]
+        ip_src = row[ip_src_index]
+        label=row[label_index]
+        time=row[time_index]
+
+        # 在这里进行你的处理，比如打印或其他操作
+        # print(f'Epoch: {epoch}, IP_SRC: {ip_src}, Label:{label}')
         
-        if (obj.ddosDetected == 1) :
-            print("Controller detected DDOS ATTACK, Entropy value :",str(obj.sumEntropy))
-            obj.ddosDetected = 0
-            print("Future work to implement prevention methods")
-            break
+        # obj.get_ddos_list(time,label)
+        #print "Entropy value = ",str(obj.sumEntropy)
+        obj.calculateEntropy(ip_src,time,0.37)
+        # if (obj.ddosDetected == 1) :
+        #     print("Controller detected DDOS ATTACK, Entropy value :",str(obj.sumEntropy))
+        #     obj.ddosDetected = 0
+        #     print("Future work to implement prevention methods")
+        #     break
     print(obj.ddos_dist)
-    print(obj.norm_dist)
-    print(obj.idx)
-    print(sum(obj.ddos_dist))
+    # print(obj.norm_dist)
+    # print(obj.idx)
+    # print(sum(obj.ddos_dist))
     print(obj.detection_dist)
     
     
-    # 计算混淆矩阵
-    conf_matrix = confusion_matrix(obj.ddos_dist[:-1], obj.detection_dist)
+# 计算混淆矩阵
+conf_matrix = confusion_matrix(obj.ddos_dist[:-1], obj.detection_dist)
+tn, fp, fn, tp = np.array(conf_matrix).ravel()
 
-    # 输出混淆矩阵
-    print("Confusion Matrix:")
-    print(conf_matrix)
-    # 计算正确率
-    accuracy = accuracy_score(obj.ddos_dist[:-1], obj.detection_dist)
-    print(accuracy)
+# 输出混淆矩阵
+print("Confusion Matrix:")
+print(conf_matrix)
+# 计算正确率
+accuracy = accuracy_score(obj.ddos_dist[:-1], obj.detection_dist)
+dr=tp/(tp+fn)
+fpr=fp/(fp+tn)
+pr=tp/(tp+fp)
+print(accuracy,dr,fpr,pr)
