@@ -83,8 +83,9 @@ print(f"霍夫丁上界: {upper_bound}")
 
 
 
-
-def chebyshev_inequality(data, mean, k):
+# 根据当前归一化熵值和最后N个检测区间的熵值数组，计算数组的平均值M和标准差gamma
+# 阈值sigma=M-k*gamma
+def chebyshev_inequality(data, k):
     """
     切比雪夫不等式：给出随机变量偏离其均值的上界。
 
@@ -98,12 +99,12 @@ def chebyshev_inequality(data, mean, k):
         - upper_bound: 偏离均值的上界
     """
     std_dev = np.std(data)
-    n = len(data)
+    mean = np.array(data)
 
     lower_bound = mean - k * std_dev
     upper_bound = mean + k * std_dev
 
-    return lower_bound, upper_bound
+    return lower_bound
 
 # 示例数据
 data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
