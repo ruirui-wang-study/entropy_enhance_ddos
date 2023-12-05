@@ -11,16 +11,16 @@ https://ieeexplore.ieee.org/abstract/document/9678955?casa_token=WzbhYjmU_KMAAAA
 * 切比雪夫不等式是一种通用的不等式，适用于任何随机变量，但提供的上界可能相对宽松。
 * 霍夫丁不等式在特定条件下（独立同分布、大样本）提供了更紧凑的概率上界，通常对于大样本情况更为精确。
 
-
-
 时差
 
 实际时间 11 pcap  8  csv
 
 9.47            20.47     12.47
 
-
 使用qleaning调整阈值，近似数计算 1/8
 
-
 ![1701095942271](image/README/1701095942271.png)
+
+
+
+![1701695504311](image/README/1701695504311.png)
