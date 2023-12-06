@@ -4,12 +4,12 @@ def hoeffding_inequality_probability(n, epsilon):
     return 2 * math.exp(-2 * n * epsilon**2)
 
 # 示例用法
-sample_size = 1000  # 样本数
-epsilon_value = 0.1  # 给定的正数
+# sample_size = 1000  # 样本数
+# epsilon_value = 0.1  # 给定的正数
 
-probability = hoeffding_inequality_probability(sample_size, epsilon_value)
+# probability = hoeffding_inequality_probability(sample_size, epsilon_value)
 
-print(f"The probability is approximately: {probability}")
+# print(f"The probability is approximately: {probability}")
 
 # 这是霍夫丁不等式的一个应用，用于估计样本平均值与总体平均值之间的差异的概率。具体来说，这个不等式表达的是事件 \(P(\bar{S} - \mu \geq 2)\) 的概率上界，其中 \(\bar{S}\) 是样本均值，\(\mu\) 是总体均值。
 
@@ -64,22 +64,22 @@ def hoeffding_bound(sample_mean, true_mean, epsilon, n):
     return upper_bound if bound > 1 else upper_bound + 1
 
 # 生成二项分布的样本
-n = 1000  # 样本大小
-p = 0.3   # 成功的概率
-sample = np.random.binomial(1, p, n)
+# n = 1000  # 样本大小
+# p = 0.3   # 成功的概率
+# sample = np.random.binomial(1, p, n)
 
-# 计算样本平均值
-sample_mean = np.mean(sample)
+# # 计算样本平均值
+# sample_mean = np.mean(sample)
 
-# 设置真实的平均值和误差
-true_mean = p
-epsilon = 0.1
+# # 设置真实的平均值和误差
+# true_mean = p
+# epsilon = 0.1
 
-# 计算霍夫丁上界
-upper_bound = hoeffding_bound(sample_mean, true_mean, epsilon, n)
+# # 计算霍夫丁上界
+# upper_bound = hoeffding_bound(sample_mean, true_mean, epsilon, n)
 
-print(f"样本平均值: {sample_mean}")
-print(f"霍夫丁上界: {upper_bound}")
+# print(f"样本平均值: {sample_mean}")
+# print(f"霍夫丁上界: {upper_bound}")
 
 
 
@@ -98,25 +98,29 @@ def chebyshev_inequality(data, k):
         - lower_bound: 偏离均值的下界
         - upper_bound: 偏离均值的上界
     """
-    std_dev = np.std(data)
-    mean = np.array(data)
+    # std_dev = np.std(data)
+    # mean = np.array(data)
 
-    lower_bound = mean - k * std_dev
-    upper_bound = mean + k * std_dev
+    # lower_bound = mean - k * std_dev
+    # upper_bound = mean + k * std_dev
+    lower_bound = np.mean(data) - k * np.std(data)
+
+    print("lower_bound")
+    print(lower_bound)
 
     return lower_bound
 
 # 示例数据
-data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # 计算均值
-mean_value = np.mean(data)
+# mean_value = np.mean(data)
 
 # 设置切比雪夫不等式中的常数 k
-k_value = 2
+# k_value = 2
 
 # 计算切比雪夫不等式的上下界
-lower, upper = chebyshev_inequality(data, mean_value, k_value)
+# lower, upper = chebyshev_inequality(data, mean_value, k_value)
 
-print(f"切比雪夫不等式的下界：{lower}")
-print(f"切比雪夫不等式的上界：{upper}")
+# print(f"切比雪夫不等式的下界：{lower}")
+# print(f"切比雪夫不等式的上界：{upper}")

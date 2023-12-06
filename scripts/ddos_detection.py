@@ -8,8 +8,8 @@ import csv
 
 import numpy as np
 obj = entropyCalculation.ddosDetection()
-csv_file_path = 'csv\epoch_26.csv'  
-
+csv_file_path = 'data/datasetWithLabel.csv'  
+import update
 from datetime import datetime, timedelta
 def cal_window(time):
     # 示例时间字符串
@@ -80,7 +80,7 @@ with open(csv_file_path, 'r') as file:
 obj.idx=0
 obj.flag=0
 obj.start_time=""
-    
+threshold=0.37   
 with open(csv_file_path, 'r') as file:
     csv_reader = csv.reader(file)
 
@@ -101,19 +101,50 @@ with open(csv_file_path, 'r') as file:
         
         # obj.get_ddos_list(time,label)
         #print "Entropy value = ",str(obj.sumEntropy)
-        obj.calculateEntropy(ip_src,time,0.37)
+        obj.calculateEntropy(ip_src,time,threshold)
         # if (obj.ddosDetected == 1) :
         #     print("Controller detected DDOS ATTACK, Entropy value :",str(obj.sumEntropy))
         #     obj.ddosDetected = 0
         #     print("Future work to implement prevention methods")
         #     break
+        if len(obj.detection_win) == 15:
+            flag=1
+            for i,value in enumerate(obj.detection_win):
+                if value>0:
+                    flag=0
+                    break
+            if flag:
+                threshold=update.chebyshev_inequality(obj.EV,4)
+            print(obj.detection_win,threshold)
+            obj.detection_win = np.array([])
+        if len(obj.EV) >= 15:
+            # 当数组元素个数达到 10 时删除第一个元素
+            obj.EV = np.delete(obj.EV, 0)
     print(obj.ddos_dist)
     # print(obj.norm_dist)
     # print(obj.idx)
     # print(sum(obj.ddos_dist))
     print(obj.detection_dist)
-    
-    
+# k=4
+# Confusion Matrix:
+# [[454  36]
+#  [  0  18]]
+# 0.9291338582677166 1.0 0.07346938775510205 0.3333333333333333
+# k=6
+# Confusion Matrix:
+# [[461  29]
+#  [  8  10]]
+# 0.9271653543307087 0.5555555555555556 0.05918367346938776 0.2564102564102564
+# k=8
+# Confusion Matrix:
+# [[466  24]
+#  [ 16   2]]
+# 0.9212598425196851 0.1111111111111111 0.04897959183673469 0.07692307692307693
+# k=1
+# Confusion Matrix:
+# [[310 180]
+#  [  0  18]]
+# 0.6456692913385826 1.0 0.3673469387755102 0.09090909090909091
 # 计算混淆矩阵
 conf_matrix = confusion_matrix(obj.ddos_dist[:-1], obj.detection_dist)
 tn, fp, fn, tp = np.array(conf_matrix).ravel()

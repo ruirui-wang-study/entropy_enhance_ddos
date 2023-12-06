@@ -1,12 +1,12 @@
 from cProfile import label
 import math
 from re import S
-from matplotlib.pyplot import flag
+# from matplotlib.pyplot import flag
 
 import pandas as pd
 
 import numpy as np
-import update
+
 # 手动给一个阈值，根据时间窗口计算ip的信息熵，归一化之后与阈值做比较，超出阈值则视为存在攻击
 # （这里不纠结信息熵的计算方式，统一用香农公式）
 # 如果时间窗口内没有检测出DDoS攻击，则更新阈值
@@ -39,6 +39,7 @@ class ddosDetection:
    flag=0
    
    EV = np.array([])
+   detection_win=np.array([])
    def calculateEntropy(self,ip,time,threshold):
       #calculate entropy when pkt cont reaches 100
       self.pktCnt +=1
@@ -50,7 +51,7 @@ class ddosDetection:
       if self.flag==0:
          self.start_time=time
          self.flag=1
-      print(time)
+      # print(time)
       if time!=self.start_time:       
          #print self.ipList_Dict.items()
          print( self.pktCnt)
@@ -71,11 +72,8 @@ class ddosDetection:
          max_possible_entropy = -math.log(1 / float(len(self.ipList_Dict)), 2)
          normalized_entropy = self.sumEntropy / max_possible_entropy
          self.norm_dist[self.idx]=normalized_entropy
-         self.EV.append(normalized_entropy)
-         if len(self.EV) == 10:
-            threshold=update.chebyshev_inequality(self.EV,2)
-            # 当数组元素个数达到 10 时删除第一个元素
-            self.EV = np.delete(self.EV, 0)
+         self.EV=np.append(self.EV,normalized_entropy)
+         
          print("Normalized Entropy Value =", normalized_entropy)
          # print(self.ddos_dist)
          # print(self.res_dist)
@@ -103,8 +101,11 @@ class ddosDetection:
          if 0 < normalized_entropy < threshold:
             # self.counter += 1
             self.detection_dist.append(1)
+            self.detection_win=np.append(self.detection_win,1)
+            
          else :
             self.detection_dist.append(0)
+            self.detection_win=np.append(self.detection_win,0)
          self.idx=self.idx+1
          # if self.counter == 10:
          #    self.ddosDetected = 1
