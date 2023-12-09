@@ -19,122 +19,43 @@ import numpy as np
 class ddosDetection:
    # 从时间窗口1开始检测，一次检测6个窗口（即30min），如果超过半数的窗口的熵值低于阈值则判定存在ddos攻击
    # 这个策略需要根据实际数据来定，在ddos窗口计算分布情况，再根据这个改变策略
-   time_win=1
-   pktCnt = 0
-   #ddosDetected : 1 indicates ddosDetected is true , 0 : false
-   ddosDetected = 0
-   # if 10 times consecutively , entropy value is less than 1, then indicate to controller than DDOS Attack is detected
-   counter = 0
-   
-   
-   ipList_Dict = {}
-   sumEntropy = 0
-   ddos_dist=[]
-   idx=0
-   ddos_dist.append(0)
-   res_dist={}
-   norm_dist={}
-   detection_dist=[]
-   start_time=""
-   flag=0
-   
-   EV = np.array([])
-   detection_win=np.array([])
-   def calculateEntropy(self,ip,time,threshold):
-      #calculate entropy when pkt cont reaches 100
-      self.pktCnt +=1
-      if ip in self.ipList_Dict:
-         self.ipList_Dict[ip] += 1
-      else:
-         self.ipList_Dict[ip] = 0
 
-      if self.flag==0:
-         self.start_time=time
-         self.flag=1
-      # print(time)
-      if time!=self.start_time:       
-         #print self.ipList_Dict.items()
-         print( self.pktCnt)
-         self.sumEntropy = 0
-         self.ddosDetected = 0
-         print( "Window size of 50 pkts reached, calculate entropy")
-         # //计算香农熵
-         for ip,value in self.ipList_Dict.items():
-            prob = abs(value/float(self.pktCnt))
-            #print prob
-            if (prob > 0.0) : 
-               ent = -prob * math.log(prob,2)
-               #print ent
-               self.sumEntropy =  self.sumEntropy + ent
-         self.res_dist[self.idx]=self.sumEntropy
-         # print( "Entropy Value = ",self.sumEntropy ) 
-         # 归一化香农熵到 [0, 1] 范围
-         max_possible_entropy = -math.log(1 / float(len(self.ipList_Dict)), 2)
-         normalized_entropy = self.sumEntropy / max_possible_entropy
-         self.norm_dist[self.idx]=normalized_entropy
-         self.EV=np.append(self.EV,normalized_entropy)
-         
-         print("Normalized Entropy Value =", normalized_entropy)
-         # print(self.ddos_dist)
-         # print(self.res_dist)
-         # 目测阈值设置为1.6可以准确检测出dos hulk攻击
-         # 1.6:0.8867924528301887
-         
-         # 1.7:0.9311023622047244
-#          Confusion Matrix:
-# [[468  22]
-#  [ 13   5]]
-         # if (self.sumEntropy < 1.7 and self.sumEntropy != 0) :
-         # 0.5:0.8681102362204725
-         # 0.4:0.9291338582677166
-         # Confusion Matrix:
-         # [[454  36]
-         #  [  0  18]]
-         # 0.3:0.9232283464566929
-         # Confusion Matrix:
-         # [[460  30]
-         #  [  9   9]]
-         # 0.36:0.9350393700787402
-         # Confusion Matrix:
-         # [[458  32]
-         # [  1  17]]
-         if 0 < normalized_entropy < threshold:
-            # self.counter += 1
-            self.detection_dist.append(1)
-            self.detection_win=np.append(self.detection_win,1)
-            
-         else :
-            self.detection_dist.append(0)
-            self.detection_win=np.append(self.detection_win,0)
-         self.idx=self.idx+1
-         # if self.counter == 10:
-         #    self.ddosDetected = 1
-         #    print( "Counter = ",self.counter)
-         #    print( "DDOS ATTACK DETECTED")
-         #    self.counter = 0 
-         self.cleanUpValues()
-         self.flag=0
-      #    print("this epoch is done,please turn to next epoch")       
+
+   def calculateEntropy(self,group,threshold):
+
+      sumEntropy = 0
+      res_dist=[]
+      norm_dist=[]
+      ip_counts = group['ip'].value_counts()
+      # 计算总的IP个数
+      total_ips = len(ip_counts)
+      pktCnt=len(group)
+
+      prob = abs(ip_counts/float(pktCnt))
+      if (prob > 0.0) : 
+         ent = -prob * math.log(prob,2)
+         sumEntropy =  sumEntropy + ent
+      res_dist.append(sumEntropy)
+      # print( "Entropy Value = ",self.sumEntropy ) 
+      # 归一化香农熵到 [0, 1] 范围
+      max_possible_entropy = -math.log(1 / float(total_ips), 2)
+      normalized_entropy = self.sumEntropy / max_possible_entropy
+      norm_dist.append(normalized_entropy)
+
+      detection_dist=[]
+      if 0 < normalized_entropy < threshold:
+         detection_dist.append(1)
+      else :
+         detection_dist.append(0)
+  
       
-   def get_ddos_list(self,time,label):
-      if pd.notna(label) and label=='DoS Hulk':
-         self.ddos_dist[self.idx]=1
-      if self.flag==0:
-         self.start_time=time
-         self.flag=1
-      if time!=self.start_time:
-         self.idx=self.idx+1
-         self.ddos_dist.append(0)
-         self.flag=0     
-   def cleanUpValues(self):
-      self.pktCnt = 0
-      self.dest_ipList = []
-      self.ipList_Dict = {}
-      self.sumEntropy = 0
-      # self.ddos_dist={}
-      # self.idx=0
-      # self.ddos_dist[self.idx]=0
-      # self.res_dist={}
+   def get_ddos_list(self,group):
+      label=group['label']
+      ddos_list=[]
+      if pd.notna(label) and label!='DoS Hulk':
+         ddos_list.append(1)
+      return ddos_list
+     
 
 def __init__(self):
     pass
