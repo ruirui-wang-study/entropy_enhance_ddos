@@ -1,5 +1,6 @@
 import gym
 from gym import spaces
+from matplotlib import pyplot as plt
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix
@@ -23,13 +24,13 @@ class CustomEnv(gym.Env):
         self.ddos_df = ddos_df
         self.entropy_df = entropy_df
         self.current_step = 0
-        self.total_steps = len(entropy_df)/window_size
+        self.total_steps = 100
         self.window_size=window_size
         # 定义动作空间
-        self.action_space = gym.spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=0.3, high=1, shape=(1,), dtype=np.float32)
         # 定义观察空间
         self.observation_space = spaces.Dict({
-            'threshold': spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            # 'threshold': spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             'accuracy': spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             'dr': spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             'pr': spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
@@ -46,8 +47,8 @@ class CustomEnv(gym.Env):
         # initial_window_entropy = self.read_next_window(self.entropy_df,self.window_size,(self.current_step*self.window_size))
         # initial_window_ddos = self.read_next_window(self.ddos_df,self.window_size,(self.current_step*self.window_size))
         # 3. 返回初始观察
-        initial_observation = {
-            'threshold': np.random.uniform(low=0, high=1, size=(1,)),
+        observation = {
+            # 'threshold': np.random.uniform(low=0, high=1, size=(1,)),
             'accuracy': np.random.uniform(low=0, high=1, size=(1,)),
             'dr': np.random.uniform(low=0, high=1, size=(1,)),
             'pr': np.random.uniform(low=0, high=1, size=(1,)),
@@ -57,7 +58,10 @@ class CustomEnv(gym.Env):
             # 'ddos_window': initial_window_ddos['DDOS'].values,
         }
 
-        return initial_observation
+        # obs = self.reset(**kwargs)
+
+    
+        return observation
 
 
     def calculatemetrix(self, entropy_window, ddos_window):
@@ -95,26 +99,21 @@ class CustomEnv(gym.Env):
 
         return window_data
     def calculate_reward(self, accuracy, recall, precision, f1):
-        alpha = 0.25  # 调整为适当的值
-        beta = 0.3    # 调整为适当的值
-        gamma = 0.2   # 调整为适当的值
-        delta = -0.25  # 调整为适当的值
+        alpha = 1  
+        beta = 0    
+        gamma = 0   
+        delta = 0  
 
         reward = alpha * accuracy + beta * recall + gamma * precision + delta * f1
         return reward
     def step(self, action):
         # Assuming 'action' is the selected threshold value from the action space
 
-        # Read the next window of data from the CSV file
-        # Assuming 'read_next_window' is a function that reads the next window of data
-        next_window_entropy = self.read_next_window(self.entropy_df,self.window_size,self.current_step*self.window_size)
-        next_window_ddos = self.read_next_window(self.ddos_df,self.window_size,self.current_step*self.window_size)
-
         # Compare entropy with threshold and update entropy_window
-        entropy_window = (next_window_entropy['normalized_entropy'].values < action).astype(int)
+        entropy_window = (self.entropy_df['normalized_entropy'].values < action).astype(int)
 
         # Update ddos_window
-        ddos_window = next_window_ddos['DDOS'].values
+        ddos_window = self.ddos_df['DDOS'].values
 
         # Calculate accuracy, dr, pr (assuming you have functions for these calculations)
         accuracy,recall,precision,f1 = self.calculatemetrix(ddos_window, entropy_window)
@@ -127,8 +126,8 @@ class CustomEnv(gym.Env):
             'pr': np.array([precision]),
             # 'fpr': np.array([fpr]),
             'f1': np.array([f1]),
-            'entropy_window': entropy_window,
-            'ddos_window': ddos_window,
+            # 'entropy_window': entropy_window,
+            # 'ddos_window': ddos_window,
         }
         reward = self.calculate_reward(accuracy,recall,precision,f1)
         # 更新当前步数
@@ -148,16 +147,30 @@ class CustomEnv(gym.Env):
         
         # Return observation, reward, done, and additional info
         return observation, reward, done, {}
-
+from stable_baselines3.common.monitor import Monitor
 # 创建强化学习环境
 env = DummyVecEnv([lambda: CustomEnv(ddos_df, entropy_df)])
 
+env = Monitor(env.envs[0], filename="log/directory")
 # 创建PPO模型
 model = PPO("MultiInputPolicy", env, verbose=1)
-
+total_timesteps=100
 # 训练模型
-model.learn(total_timesteps=10000)
+model.learn(total_timesteps=total_timesteps)
 
 # 打印最优阈值和训练时间
 # print("Optimal Threshold:", model.)
 # print("Training Time:", model.duration)
+# 获取训练过程中的统计信息
+mean_rewards = env.get_episode_rewards()
+print(mean_rewards)
+timesteps = range(0, total_timesteps, total_timesteps// len(mean_rewards))
+
+# 画出收敛曲线
+plt.plot(timesteps, mean_rewards)
+plt.xlabel("Timesteps")
+plt.ylabel("Mean Rewards")
+plt.title("PPO Convergence Curve")
+plt.savefig("ppo_convergence_curve.png")
+
+plt.show()
